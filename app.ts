@@ -98,7 +98,9 @@ async function verifyHypernativeSignature(signature: string, body: Buffer): Prom
       signatureLength: derSignatureBytes.length,
       dataLength: body.length,
       signature: signature.substring(0, 20) + '...',
-      dataPreview: body.slice(0, 50).toString() + '...'
+      dataPreview: body.slice(0, 100).toString() + '...',
+      publicKeyLoaded: HYPERNATIVE_PUBLIC_KEY ? 'Yes' : 'No',
+      hashAlgorithm: 'SHA-256'
     });
 
     // Convert DER signature to IEEE P1363 format
@@ -222,8 +224,9 @@ app.post('/hypernative', async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // 5. Verify the signature
-    const isValidSignature = await verifyHypernativeSignature(digitalSignature, rawBody);
+    // 5. Verify the signature against the 'data' field only
+    const dataToVerify = Buffer.from(hypernativeData.data, 'utf8');
+    const isValidSignature = await verifyHypernativeSignature(digitalSignature, dataToVerify);
     if (!isValidSignature) {
       console.error('Invalid Hypernative signature');
       res.status(401).json({ error: 'Invalid signature' });
